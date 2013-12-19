@@ -726,7 +726,7 @@ void Connection::handleResult(ExecuteBaton* baton, Handle<Value> (&argv)[2]) {
           case OutParam::OCCICLOB:
             {
               output->clobVal.open(oracle::occi::OCCI_LOB_READONLY);
-              int lobLength = output->clobVal.length();
+              int lobLength = output->clobVal.getChunkSize();
               oracle::occi::Stream* instream = output->clobVal.getStream(1,0);
               char *buffer = new char[lobLength];
               memset(buffer, 0, lobLength);
