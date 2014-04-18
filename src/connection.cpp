@@ -795,12 +795,13 @@ failed:
               output->clobVal.open(oracle::occi::OCCI_LOB_READONLY);
       				oracle::occi::Stream* instream = output->clobVal.getStream(1,0);
       				size_t chunkSize = output->clobVal.getChunkSize();
-      				char *buffer = new char[chunkSize];
+      				char *buffer = new char[chunkSize + 1];
       				memset(buffer, 0, chunkSize);
       				std::string clobVal;
       				int numBytesRead = instream->readBuffer(buffer, chunkSize);
       				int totalBytesRead = 0;
       				while (numBytesRead != -1) {
+                buffer[numBytesRead] = 0;
       					totalBytesRead += numBytesRead;
       					clobVal.append(buffer);
       					numBytesRead = instream->readBuffer(buffer, chunkSize);
