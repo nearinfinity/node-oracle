@@ -318,6 +318,8 @@ void Connection::CreateColumnsFromResultSet(oracle::occi::ResultSet* rs, Execute
       case oracle::occi::OCCI_TYPECODE_VARCHAR2:
       case oracle::occi::OCCI_TYPECODE_VARCHAR:
       case oracle::occi::OCCI_TYPECODE_CHAR:
+      // long TYPE
+      case oracle::occi::OCCI_TYPECODE_LONG:
         col->type = VALUE_TYPE_STRING;
         break;
       case oracle::occi::OCCI_TYPECODE_CLOB:
