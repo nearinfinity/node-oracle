@@ -3,6 +3,7 @@
 #define _rollback_baton_h_
 
 #include "connection.h"
+#include "nan.h"
 
 class RollbackBaton {
 public:
@@ -11,7 +12,7 @@ public:
     uni::Reset(this->callback, *callback);
   }
   ~RollbackBaton() {
-    callback.Dispose();
+    NanDisposePersistent(callback);
   }
 
   Connection *connection;

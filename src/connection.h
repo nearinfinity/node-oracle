@@ -26,7 +26,7 @@ namespace uni {
   typedef v8::FunctionCallbackInfo<v8::Value> FunctionCallbackInfo;
   typedef v8::Local<Value> BufferType;
 # define UNI_RETURN(scope, args, res) { args.GetReturnValue().Set(res); return; }
-# define UNI_THROW(ex) { ThrowException(ex); return; }
+# define UNI_THROW(ex) { NanThrowError(ex); return; }
 # define UNI_SCOPE(scope) HandleScope scope(Isolate::GetCurrent()) 
   template <class T>
   void Reset(Persistent<T>& persistent, Handle<T> handle) {
@@ -34,7 +34,7 @@ namespace uni {
   }
   template <class T>
   Handle<T> Deref(Persistent<T>& handle) {
-    return Handle<T>::New(Isolate::GetCurrent(), handle);
+    return Local<T>::New(Isolate::GetCurrent(), handle);
   }
   template <class T>
   Local<T> HandleToLocal(Handle<T> handle) {
@@ -51,7 +51,7 @@ namespace uni {
   typedef Arguments FunctionCallbackInfo;
   typedef node::Buffer* BufferType;
 # define UNI_RETURN(scope, args, res) return scope.Close(res)
-# define UNI_THROW(ex) return ThrowException(ex)
+# define UNI_THROW(ex) return NanThrowError(ex)
 # define UNI_SCOPE(scope) HandleScope scope
   template <class T>
   void Reset(Persistent<T>& persistent, Handle<T> handle) {

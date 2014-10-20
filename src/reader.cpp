@@ -10,13 +10,13 @@ Persistent<FunctionTemplate> Reader::constructorTemplate;
 void Reader::Init(Handle<Object> target) {
   UNI_SCOPE(scope);
 
-  Local<FunctionTemplate> t = FunctionTemplate::New(New);
+  Local<FunctionTemplate> t = NanNew<FunctionTemplate>(New);
   uni::Reset(constructorTemplate, t);
   uni::Deref(constructorTemplate)->InstanceTemplate()->SetInternalFieldCount(1);
-  uni::Deref(constructorTemplate)->SetClassName(String::NewSymbol("Reader"));
+  uni::Deref(constructorTemplate)->SetClassName(NanNew<String>("Reader"));
 
   NODE_SET_PROTOTYPE_METHOD(uni::Deref(constructorTemplate), "nextRows", NextRows);
-  target->Set(String::NewSymbol("Reader"), uni::Deref(constructorTemplate)->GetFunction());
+  target->Set(NanNew<String>("Reader"), uni::Deref(constructorTemplate)->GetFunction());
 }
 
 Reader::Reader(): ObjectWrap() {
@@ -45,11 +45,11 @@ uni::CallbackType Reader::NextRows(const uni::FunctionCallbackInfo& args) {
   Reader* reader = ObjectWrap::Unwrap<Reader>(args.This());
   ReaderBaton* baton = reader->m_baton;
   if (baton->error) {
-    Local<String> message = String::New(baton->error->c_str());
+    Local<String> message = NanNew<String>(baton->error->c_str());
     UNI_THROW(Exception::Error(message));
   }
   if (baton->busy) {
-    UNI_THROW(Exception::Error(String::New("invalid state: reader is busy with another nextRows call")));
+    UNI_THROW(Exception::Error(NanNew<String>("invalid state: reader is busy with another nextRows call")));
   }
   baton->busy = true;
 
@@ -70,7 +70,7 @@ uni::CallbackType Reader::NextRows(const uni::FunctionCallbackInfo& args) {
   uv_queue_work(uv_default_loop(), req, EIO_NextRows, (uv_after_work_cb)EIO_AfterNextRows);
   baton->connection->Ref();
 
-  UNI_RETURN(scope, args, Undefined());
+  UNI_RETURN(scope, args, NanUndefined());
 }
 
 void Reader::EIO_NextRows(uv_work_t* req) {
@@ -120,8 +120,8 @@ void Reader::EIO_AfterNextRows(uv_work_t* req, int status) {
   baton->connection->Unref();
   // transfer callback to local and dispose persistent handle
   Local<Function> cb = uni::HandleToLocal(uni::Deref(baton->callback));
-  baton->callback.Dispose();
-  baton->callback.Clear();
+  NanDisposePersistent(baton->callback);
+  //  baton->callback.Clear();
 
   Handle<Value> argv[2];
   Connection::handleResult(baton, argv);
@@ -135,6 +135,6 @@ void Reader::EIO_AfterNextRows(uv_work_t* req, int status) {
   delete req;
 
   // invoke callback at the very end because callback may re-enter nextRows.
-  node::MakeCallback(Context::GetCurrent()->Global(), cb, 2, argv);
+  NanMakeCallback(NanGetCurrentContext()->Global(), cb, 2, argv);
 }
 
