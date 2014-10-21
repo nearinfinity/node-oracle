@@ -91,7 +91,6 @@ void Statement::EIO_AfterExecute(uv_work_t* req, int status) {
   // transfer callback to local and dispose persistent handle
   Local<Function> cb = uni::HandleToLocal(uni::Deref(baton->callback));
   NanDisposePersistent(baton->callback);
-  //  baton->callback.Clear();
 
   Handle<Value> argv[2];
   Connection::handleResult(baton, argv);
