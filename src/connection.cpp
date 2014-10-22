@@ -63,7 +63,13 @@ uni::CallbackType Connection::Execute(const uni::FunctionCallbackInfo& args) {
     options = Local<Object>::Cast(args[2]);
     ++cbIndex;
   }
-  REQ_FUN_ARG(cbIndex, callback);
+  if (args.Length() <= cbIndex || !args[cbIndex]->IsFunction())
+  {
+    ostringstream oss;
+    oss << "Argument " << cbIndex << " must be a function";
+    UNI_THROW(Exception::TypeError(String::New(oss.str().c_str())));
+  }
+  Local<Function> callback = Local<Function>::Cast(args[cbIndex]);
 
   String::Utf8Value sqlVal(sql);
 
@@ -743,14 +749,13 @@ Local<Array> Connection::CreateV8ArrayFromCols(std::vector<column_t*> columns)
 {
   Local<Array> v8cols = Array::New(columns.size());
   uint32_t index = 0;
-  for (std::vector<column_t*>::iterator iterator = columns.begin(), end =columns.end();
-		 iterator != end; ++iterator, ++index)
+  for (std::vector<column_t*>::iterator iterator = columns.begin(), end =columns.end(); iterator != end; ++iterator, ++index)
   {
-	  column_t* col = *iterator;
-	  v8::Local<v8::Object> v8col = v8::Object::New();
-	  v8col->Set(v8::String::New("name"), String::New(col->name.c_str()));
-	  v8col->Set(v8::String::New("type"), Number::New((double)(col->type)));
-	  v8cols->Set(index, v8col);
+     column_t* col = *iterator;
+     v8::Local<v8::Object> v8col = v8::Object::New();
+     v8col->Set(v8::String::New("name"), String::New(col->name.c_str()));
+     v8col->Set(v8::String::New("type"), Number::New((double)(col->type)));
+     v8cols->Set(index, v8col);
   }
   return v8cols;
 }
@@ -784,11 +789,11 @@ failed:
   } else {
     argv[0] = Undefined();
     if(baton->rows) {
-		Local<Object> obj = CreateV8ArrayFromRows(baton, baton->columns, baton->rows);
-		if (baton->getColumnMetaData) {
-		  obj->Set(String::New("columnMetaData"),
-							CreateV8ArrayFromCols(baton->columns));
-		}
+      Local<Object> obj = CreateV8ArrayFromRows(baton, baton->columns, baton->rows);
+      if (baton->getColumnMetaData) {
+        obj->Set(String::New("columnMetaData"),
+                     CreateV8ArrayFromCols(baton->columns));
+      }
       argv[1] = obj;
       if (baton->error) goto failed; // delete argv[1] ??
     } else {

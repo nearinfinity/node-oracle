@@ -240,4 +240,16 @@ exports['IntegrationTest'] = nodeunit.testCase({
     });
   },
 
+  "errors": function(test) {
+    var self = this;
+    try { self.connection.execute("SELECT * FROM person", [], "bad arg"); }
+    catch(e) { test.equal(e.message, "Argument 2 must be a function"); }
+    try { self.connection.execute("SELECT * FROM person", [], {}); }
+    catch(e) { test.equal(e.message, "Argument 3 must be a function"); }
+    try { self.connection.execute("SELECT * FROM person", [], {}, "bad arg"); }
+    catch(e) { test.equal(e.message, "Argument 3 must be a function"); }
+
+    test.done();
+  },
+
 });
