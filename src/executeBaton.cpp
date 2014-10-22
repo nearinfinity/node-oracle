@@ -7,7 +7,7 @@
 #include <cmath>
 using namespace std;
 
-ExecuteBaton::ExecuteBaton(Connection* connection, const char* sql, v8::Local<v8::Array>* values, v8::Handle<v8::Function>* callback) {
+ExecuteBaton::ExecuteBaton(Connection* connection, const char* sql, v8::Local<v8::Array>* values, v8::Local<v8::Object>* options, v8::Handle<v8::Function>* callback) {
   this->connection = connection;
   this->sql = sql;
   if(callback!=NULL) {
@@ -16,6 +16,7 @@ ExecuteBaton::ExecuteBaton(Connection* connection, const char* sql, v8::Local<v8
   this->outputs = new std::vector<output_t*>();
   this->error = NULL;
   if (values) CopyValuesToBaton(this, values);
+  SetOptionsInBaton(this, options);
   this->rows = NULL;
 }
 
@@ -185,6 +186,10 @@ void ExecuteBaton::CopyValuesToBaton(ExecuteBaton* baton, v8::Local<v8::Array>* 
       return;
     }
   }
+}
+
+void ExecuteBaton::SetOptionsInBaton(ExecuteBaton* baton, v8::Local<v8::Object>* options) {
+  baton->getColumnMetaData = (!options->IsEmpty()) ? (*options)->Get(v8::String::New("getColumnMetaData"))->BooleanValue() : false;
 }
 
 void ExecuteBaton::GetVectorParam(ExecuteBaton* baton, arrayParam_t* arrParam, Local<Array> arr) {

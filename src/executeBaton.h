@@ -69,7 +69,7 @@ struct output_t {
 
 class ExecuteBaton {
 public:
-  ExecuteBaton(Connection* connection, const char* sql, v8::Local<v8::Array>* values, v8::Handle<v8::Function>* callback);
+  ExecuteBaton(Connection* connection, const char* sql, v8::Local<v8::Array>* values, v8::Local<v8::Object>* options, v8::Handle<v8::Function>* callback);
   ~ExecuteBaton();
   void ResetValues();
   void ResetRows();
@@ -84,9 +84,11 @@ public:
   std::vector<row_t*>* rows;
   std::vector<output_t*>* outputs;
   std::string* error;
+  bool getColumnMetaData;
   int updateCount;
 
   static void CopyValuesToBaton(ExecuteBaton* baton, v8::Local<v8::Array>* values);
+  static void SetOptionsInBaton(ExecuteBaton* baton, v8::Local<v8::Object>* options);
   static void GetVectorParam(ExecuteBaton* baton, arrayParam_t *value, v8::Local<v8::Array> arr);
 };
 

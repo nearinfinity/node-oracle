@@ -56,11 +56,18 @@ uni::CallbackType Connection::Execute(const uni::FunctionCallbackInfo& args) {
 
   REQ_STRING_ARG(0, sql);
   REQ_ARRAY_ARG(1, values);
-  REQ_FUN_ARG(2, callback);
+  Local<Object> options;
+  int cbIndex = 2;
+  if (args.Length() > 2 && args[2]->IsObject() && !args[2]->IsFunction())
+  {
+    options = Local<Object>::Cast(args[2]);
+    ++cbIndex;
+  }
+  REQ_FUN_ARG(cbIndex, callback);
 
   String::Utf8Value sqlVal(sql);
 
-  ExecuteBaton* baton = new ExecuteBaton(connection, *sqlVal, &values, &callback);
+  ExecuteBaton* baton = new ExecuteBaton(connection, *sqlVal, &values, &options, &callback);
   if (baton->error) {
     Local<String> message = String::New(baton->error->c_str());
     delete baton;
@@ -732,6 +739,22 @@ Local<Array> Connection::CreateV8ArrayFromRows(ExecuteBaton* baton, vector<colum
   return retRows;
 }
 
+Local<Array> Connection::CreateV8ArrayFromCols(std::vector<column_t*> columns)
+{
+  Local<Array> v8cols = Array::New(columns.size());
+  uint32_t index = 0;
+  for (std::vector<column_t*>::iterator iterator = columns.begin(), end =columns.end();
+		 iterator != end; ++iterator, ++index)
+  {
+	  column_t* col = *iterator;
+	  v8::Local<v8::Object> v8col = v8::Object::New();
+	  v8col->Set(v8::String::New("name"), String::New(col->name.c_str()));
+	  v8col->Set(v8::String::New("type"), Number::New((double)(col->type)));
+	  v8cols->Set(index, v8col);
+  }
+  return v8cols;
+}
+
 void Connection::EIO_AfterExecute(uv_work_t* req, int status) {
 
   UNI_SCOPE(scope);
@@ -761,7 +784,12 @@ failed:
   } else {
     argv[0] = Undefined();
     if(baton->rows) {
-      argv[1] = CreateV8ArrayFromRows(baton, baton->columns, baton->rows);
+		Local<Object> obj = CreateV8ArrayFromRows(baton, baton->columns, baton->rows);
+		if (baton->getColumnMetaData) {
+		  obj->Set(String::New("columnMetaData"),
+							CreateV8ArrayFromCols(baton->columns));
+		}
+      argv[1] = obj;
       if (baton->error) goto failed; // delete argv[1] ??
     } else {
       Local<Object> obj = Object::New();
@@ -870,10 +898,13 @@ uni::CallbackType Connection::ExecuteSync(const uni::FunctionCallbackInfo& args)
 
   REQ_STRING_ARG(0, sql);
   REQ_ARRAY_ARG(1, values);
+  Local<Object> options;
+  if (args.Length() > 2 && args[2]->IsObject() && !args[2]->IsFunction())
+    options = Local<Object>::Cast(args[2]);
 
   String::Utf8Value sqlVal(sql);
 
-  ExecuteBaton* baton = new ExecuteBaton(connection, *sqlVal, &values, NULL);
+  ExecuteBaton* baton = new ExecuteBaton(connection, *sqlVal, &values, &options, NULL);
   if (baton->error) {
     Local<String> message = String::New(baton->error->c_str());
     delete baton;
