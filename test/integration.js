@@ -199,6 +199,35 @@ exports['IntegrationTest'] = nodeunit.testCase({
       });
   },
 
+  "select with getColumnMetaData": function(test) {
+    var self = this;
+    self.connection.execute("INSERT INTO person (name) VALUES (:1)", ["Bill O'Neil"], function(err, results) {
+      if(err) { console.error(err); return; }
+      self.connection.execute("SELECT * FROM person", [], {getColumnMetaData:true}, function(err, results) {
+        if(err) { console.error(err); return; }
+        test.equal(results.length, 1);
+        test.deepEqual(results.columnMetaData, [ { name: 'ID', type: 4 }, { name: 'NAME', type: 3 } ]);
+        self.connection.execute("SELECT * FROM datatype_test", [], {getColumnMetaData:true}, function(err, results) {
+          if(err) { console.error(err); return; }
+          test.equal(results.length, 0);
+          test.deepEqual(results.columnMetaData,
+                         [ { name: 'ID', type: 4 },
+                           { name: 'TVARCHAR2', type: 3 },
+                           { name: 'TNVARCHAR2', type: 3 },
+                           { name: 'TCHAR', type: 3 },
+                           { name: 'TNCHAR', type: 3 },
+                           { name: 'TNUMBER', type: 4 },
+                           { name: 'TDATE', type: 5 },
+                           { name: 'TTIMESTAMP', type: 6 },
+                           { name: 'TCLOB', type: 7 },
+                           { name: 'TNCLOB', type: 7 },
+                           { name: 'TBLOB', type: 8 } ]);
+          test.done();
+        });
+      });
+    });
+  },
+
   "utf8_chars_in_query": function(test) {
     var self = this,
         cyrillicString = "тест";
@@ -209,5 +238,18 @@ exports['IntegrationTest'] = nodeunit.testCase({
       test.equal(results[0]['TEST'], cyrillicString, "UTF8 characters in sql query should be preserved");
       test.done();
     });
-  }
+  },
+
+  "errors": function(test) {
+    var self = this;
+    try { self.connection.execute("SELECT * FROM person", [], "bad arg"); }
+    catch(e) { test.equal(e.message, "Argument 2 must be a function"); }
+    try { self.connection.execute("SELECT * FROM person", [], {}); }
+    catch(e) { test.equal(e.message, "Argument 3 must be a function"); }
+    try { self.connection.execute("SELECT * FROM person", [], {}, "bad arg"); }
+    catch(e) { test.equal(e.message, "Argument 3 must be a function"); }
+
+    test.done();
+  },
+
 });

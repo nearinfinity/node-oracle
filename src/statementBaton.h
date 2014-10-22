@@ -7,7 +7,7 @@
 
 class StatementBaton : public ExecuteBaton {
 public:
-  StatementBaton(Connection* connection, const char* sql, v8::Local<v8::Array>* values) : ExecuteBaton(connection, sql, values, NULL) {
+  StatementBaton(Connection* connection, const char* sql, v8::Local<v8::Array>* values) : ExecuteBaton(connection, sql, values, NULL, NULL) {
     stmt = NULL;
     done = false;
     busy = false;

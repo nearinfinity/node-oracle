@@ -125,6 +125,7 @@ protected:
 private:
   static Local<Array> CreateV8ArrayFromRows(ExecuteBaton* baton, std::vector<column_t*> columns, std::vector<row_t*>* rows);
   static Local<Object> CreateV8ObjectFromRow(ExecuteBaton* baton, std::vector<column_t*> columns, row_t* currentRow);
+  static Local<Array> CreateV8ArrayFromCols(std::vector<column_t*> columns);
 
   oracle::occi::Connection* m_connection;
   oracle::occi::Environment* m_environment;
