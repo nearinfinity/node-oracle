@@ -16,10 +16,10 @@ Persistent<FunctionTemplate> Connection::constructorTemplate;
 void Connection::Init(Handle<Object> target) {
   UNI_SCOPE(scope);
 
-  Local<FunctionTemplate> t = FunctionTemplate::New(New);
+  Local<FunctionTemplate> t = NanNew<FunctionTemplate>(New);
   uni::Reset(constructorTemplate, t);
   uni::Deref(constructorTemplate)->InstanceTemplate()->SetInternalFieldCount(1);
-  uni::Deref(constructorTemplate)->SetClassName(String::NewSymbol("Connection"));
+  uni::Deref(constructorTemplate)->SetClassName(NanNew<String>("Connection"));
 
   NODE_SET_PROTOTYPE_METHOD(uni::Deref(constructorTemplate), "execute", Execute);
   NODE_SET_PROTOTYPE_METHOD(uni::Deref(constructorTemplate), "executeSync", ExecuteSync);
@@ -32,7 +32,7 @@ void Connection::Init(Handle<Object> target) {
   NODE_SET_PROTOTYPE_METHOD(uni::Deref(constructorTemplate), "commit", Commit);
   NODE_SET_PROTOTYPE_METHOD(uni::Deref(constructorTemplate), "rollback", Rollback);
 
-  target->Set(String::NewSymbol("Connection"), uni::Deref(constructorTemplate)->GetFunction());
+  target->Set(NanNew<String>("Connection"), uni::Deref(constructorTemplate)->GetFunction());
 }
 
 uni::CallbackType Connection::New(const uni::FunctionCallbackInfo& args) {
@@ -62,7 +62,7 @@ uni::CallbackType Connection::Execute(const uni::FunctionCallbackInfo& args) {
 
   ExecuteBaton* baton = new ExecuteBaton(connection, *sqlVal, &values, &callback);
   if (baton->error) {
-    Local<String> message = String::New(baton->error->c_str());
+    Local<String> message = NanNew<String>(baton->error->c_str());
     delete baton;
     UNI_THROW(Exception::Error(message));
   }
@@ -73,7 +73,7 @@ uni::CallbackType Connection::Execute(const uni::FunctionCallbackInfo& args) {
 
   connection->Ref();
 
-  UNI_RETURN(scope, args, Undefined());
+  UNI_RETURN(scope, args, NanUndefined());
 }
 
 uni::CallbackType Connection::Prepare(const uni::FunctionCallbackInfo& args) {
@@ -117,9 +117,9 @@ uni::CallbackType Connection::Close(const uni::FunctionCallbackInfo& args) {
     Connection* connection = ObjectWrap::Unwrap<Connection>(args.This());
     connection->closeConnection();
 
-    UNI_RETURN(scope, args, Undefined());
+    UNI_RETURN(scope, args, NanUndefined());
   } catch (const exception& ex) {
-    UNI_THROW(Exception::Error(String::New(ex.what())));
+    UNI_THROW(Exception::Error(NanNew<String>(ex.what())));
   }
 }
 
@@ -128,9 +128,9 @@ uni::CallbackType Connection::IsConnected(const uni::FunctionCallbackInfo& args)
   Connection* connection = ObjectWrap::Unwrap<Connection>(args.This());
 
   if(connection && connection->m_connection) {
-    UNI_RETURN(scope, args, Boolean::New(true));
+    UNI_RETURN(scope, args, NanTrue());
   } else {
-    UNI_RETURN(scope, args, Boolean::New(false));
+    UNI_RETURN(scope, args, NanFalse());
   }
 }
 
@@ -148,7 +148,7 @@ uni::CallbackType Connection::Commit(const uni::FunctionCallbackInfo& args) {
 
   connection->Ref();
 
-  UNI_RETURN(scope, args, Undefined());
+  UNI_RETURN(scope, args, NanUndefined());
 }
 
 uni::CallbackType Connection::Rollback(const uni::FunctionCallbackInfo& args) {
@@ -165,7 +165,7 @@ uni::CallbackType Connection::Rollback(const uni::FunctionCallbackInfo& args) {
 
   connection->Ref();
 
-  UNI_RETURN(scope, args, Undefined());
+  UNI_RETURN(scope, args, NanUndefined());
 }
 
 uni::CallbackType Connection::SetAutoCommit(const uni::FunctionCallbackInfo& args) {
@@ -173,7 +173,7 @@ uni::CallbackType Connection::SetAutoCommit(const uni::FunctionCallbackInfo& arg
   Connection* connection = ObjectWrap::Unwrap<Connection>(args.This());
   REQ_BOOL_ARG(0, autoCommit);
   connection->m_autoCommit = autoCommit;
-  UNI_RETURN(scope, args, Undefined());
+  UNI_RETURN(scope, args, NanUndefined());
 }
 
 uni::CallbackType Connection::SetPrefetchRowCount(const uni::FunctionCallbackInfo& args) {
@@ -181,7 +181,7 @@ uni::CallbackType Connection::SetPrefetchRowCount(const uni::FunctionCallbackInf
   Connection* connection = ObjectWrap::Unwrap<Connection>(args.This());
   REQ_INT_ARG(0, prefetchRowCount);
   connection->m_prefetchRowCount = prefetchRowCount;
-  UNI_RETURN(scope, args, Undefined());
+  UNI_RETURN(scope, args, NanUndefined());
 }
 
 void Connection::closeConnection() {
@@ -413,9 +413,9 @@ void Connection::EIO_AfterCommit(uv_work_t* req, int status) {
   baton->connection->Unref();
 
   Handle<Value> argv[2];
-  argv[0] = Undefined();
-  argv[1] = Undefined();
-  node::MakeCallback(Context::GetCurrent()->Global(), uni::Deref(baton->callback), 2, argv);
+  argv[0] = NanUndefined();
+  argv[1] = NanUndefined();
+  NanMakeCallback(NanGetCurrentContext()->Global(), uni::Deref(baton->callback), 2, argv);
   delete baton;
   delete req;
 }
@@ -433,9 +433,9 @@ void Connection::EIO_AfterRollback(uv_work_t* req, int status) {
   baton->connection->Unref();
 
   Handle<Value> argv[2];
-  argv[0] = Undefined();
-  argv[1] = Undefined();
-  node::MakeCallback(Context::GetCurrent()->Global(), uni::Deref(baton->callback), 2, argv);
+  argv[0] = NanUndefined();
+  argv[1] = NanUndefined();
+  NanMakeCallback(NanGetCurrentContext()->Global(), uni::Deref(baton->callback), 2, argv);
   delete baton;
   delete req;
 }
@@ -568,15 +568,15 @@ void Connection::EIO_Execute(uv_work_t* req) {
 
 void CallDateMethod(v8::Local<v8::Date> date, const char* methodName, int val) {
   Handle<Value> args[1];
-  args[0] = Number::New(val);
-  Local<Function>::Cast(date->Get(String::New(methodName)))->Call(date, 1, args);
+  args[0] = NanNew<Number>(val);
+  Local<Function>::Cast(date->Get(NanNew<String>(methodName)))->Call(date, 1, args);
 }
 
 Local<Date> OracleDateToV8Date(oracle::occi::Date* d) {
   int year;
   unsigned int month, day, hour, min, sec;
   d->getDate(year, month, day, hour, min, sec);
-  Local<Date> date = uni::DateCast(Date::New(0.0));
+  Local<Date> date = uni::DateCast(NanNew<Date>(0.0));
   CallDateMethod(date, "setUTCMilliseconds", 0);
   CallDateMethod(date, "setUTCSeconds", sec);
   CallDateMethod(date, "setUTCMinutes", min);
@@ -595,7 +595,7 @@ Local<Date> OracleTimestampToV8Date(oracle::occi::Timestamp* d) {
   //occi always returns nanoseconds, regardless of precision set on timestamp column
   ms = (fs / 1000000.0) + 0.5; // add 0.5 to round to nearest millisecond
 
-  Local<Date> date = uni::DateCast(Date::New(0.0));
+  Local<Date> date = uni::DateCast(NanNew<Date>(0.0));
   CallDateMethod(date, "setUTCMilliseconds", ms);
   CallDateMethod(date, "setUTCSeconds", sec);
   CallDateMethod(date, "setUTCMinutes", min);
@@ -607,40 +607,40 @@ Local<Date> OracleTimestampToV8Date(oracle::occi::Timestamp* d) {
 }
 
 Local<Object> Connection::CreateV8ObjectFromRow(ExecuteBaton* baton, vector<column_t*> columns, row_t* currentRow) {
-  Local<Object> obj = Object::New();
+  Local<Object> obj = NanNew<Object>();
   uint32_t colIndex = 0;
   for (vector<column_t*>::iterator iterator = columns.begin(), end = columns.end(); iterator != end; ++iterator, colIndex++) {
     column_t* col = *iterator;
     void* val = currentRow->values[colIndex];
     if(val == NULL) {
-      obj->Set(String::New(col->name.c_str()), Null());
+      obj->Set(NanNew<String>(col->name.c_str()), NanNull());
     } else {
       switch(col->type) {
         case VALUE_TYPE_STRING:
           {
             string* v = (string*)val;
-            obj->Set(String::New(col->name.c_str()), String::New(v->c_str()));
+            obj->Set(NanNew<String>(col->name.c_str()), NanNew<String>(v->c_str()));
             delete v;
           }
           break;
         case VALUE_TYPE_NUMBER:
           {
             oracle::occi::Number* v = (oracle::occi::Number*)val;
-            obj->Set(String::New(col->name.c_str()), Number::New((double)(*v)));
+            obj->Set(NanNew<String>(col->name.c_str()), NanNew<Number>((double)(*v)));
             delete v;
           }
           break;
         case VALUE_TYPE_DATE:
           {
             oracle::occi::Date* v = (oracle::occi::Date*)val;
-            obj->Set(String::New(col->name.c_str()), OracleDateToV8Date(v));
+            obj->Set(NanNew<String>(col->name.c_str()), OracleDateToV8Date(v));
             delete v;
           }
           break;
         case VALUE_TYPE_TIMESTAMP:
           {
             oracle::occi::Timestamp* v = (oracle::occi::Timestamp*)val;
-            obj->Set(String::New(col->name.c_str()), OracleTimestampToV8Date(v));
+            obj->Set(NanNew<String>(col->name.c_str()), OracleTimestampToV8Date(v));
             delete v;
           }
           break;
@@ -680,7 +680,7 @@ Local<Object> Connection::CreateV8ObjectFromRow(ExecuteBaton* baton, vector<colu
 
             v->closeStream(instream);
             v->close();
-            obj->Set(String::New(col->name.c_str()), String::New(columnVal.c_str(), totalBytesRead));
+            obj->Set(NanNew<String>(col->name.c_str()), NanNew<String>(columnVal.c_str(), totalBytesRead));
             delete v;
             delete [] buffer;
           }
@@ -699,11 +699,11 @@ Local<Object> Connection::CreateV8ObjectFromRow(ExecuteBaton* baton, vector<colu
 
             // convert to V8 buffer
             uni::BufferType nodeBuff = node::Buffer::New(buffer, blobLength, RandomBytesFree, NULL);
-            v8::Local<v8::Object> globalObj = v8::Context::GetCurrent()->Global();
-            v8::Local<v8::Function> bufferConstructor = v8::Local<v8::Function>::Cast(globalObj->Get(v8::String::New("Buffer")));
-            v8::Handle<v8::Value> constructorArgs[3] = { uni::BufferToHandle(nodeBuff), v8::Integer::New(blobLength), v8::Integer::New(0) };
+            v8::Local<v8::Object> globalObj = NanGetCurrentContext()->Global();
+            v8::Local<v8::Function> bufferConstructor = v8::Local<v8::Function>::Cast(globalObj->Get(NanNew<String>("Buffer")));
+            v8::Handle<v8::Value> constructorArgs[3] = { uni::BufferToHandle(nodeBuff), NanNew<Integer>(blobLength), NanNew<Integer>(0) };
             v8::Local<v8::Object> v8Buffer = bufferConstructor->NewInstance(3, constructorArgs);
-            obj->Set(String::New(col->name.c_str()), v8Buffer);
+            obj->Set(NanNew<String>(col->name.c_str()), v8Buffer);
             delete v;
             break;
           }
@@ -721,7 +721,7 @@ Local<Object> Connection::CreateV8ObjectFromRow(ExecuteBaton* baton, vector<colu
 
 Local<Array> Connection::CreateV8ArrayFromRows(ExecuteBaton* baton, vector<column_t*> columns, vector<row_t*>* rows) {
   size_t totalRows = rows->size();
-  Local<Array> retRows = Array::New(totalRows);
+  Local<Array> retRows = NanNew<Array>(totalRows);
   uint32_t index = 0;
   for (vector<row_t*>::iterator iterator = rows->begin(), end = rows->end(); iterator != end; ++iterator, index++) {
     row_t* currentRow = *iterator;
@@ -741,12 +741,12 @@ void Connection::EIO_AfterExecute(uv_work_t* req, int status) {
   try {
     Handle<Value> argv[2];
     handleResult(baton, argv);
-    node::MakeCallback(Context::GetCurrent()->Global(), uni::Deref(baton->callback), 2, argv);
+    NanMakeCallback(NanGetCurrentContext()->Global(), uni::Deref(baton->callback), 2, argv);
   } catch(const exception &ex) {
     Handle<Value> argv[2];
-    argv[0] = Exception::Error(String::New(ex.what()));
-    argv[1] = Undefined();
-    node::MakeCallback(Context::GetCurrent()->Global(), uni::Deref(baton->callback), 2, argv);
+    argv[0] = Exception::Error(NanNew<String>(ex.what()));
+    argv[1] = NanUndefined();
+    NanMakeCallback(NanGetCurrentContext()->Global(), uni::Deref(baton->callback), 2, argv);
   }
 
   delete baton;
@@ -756,16 +756,16 @@ void Connection::EIO_AfterExecute(uv_work_t* req, int status) {
 void Connection::handleResult(ExecuteBaton* baton, Handle<Value> (&argv)[2]) {
   if(baton->error) {
 failed:
-    argv[0] = Exception::Error(String::New(baton->error->c_str()));
-    argv[1] = Undefined();
+    argv[0] = Exception::Error(NanNew<String>(baton->error->c_str()));
+    argv[1] = NanUndefined();
   } else {
-    argv[0] = Undefined();
+    argv[0] = NanUndefined();
     if(baton->rows) {
       argv[1] = CreateV8ArrayFromRows(baton, baton->columns, baton->rows);
       if (baton->error) goto failed; // delete argv[1] ??
     } else {
-      Local<Object> obj = Object::New();
-      obj->Set(String::New("updateCount"), Integer::New(baton->updateCount));
+      Local<Object> obj = NanNew<Object>();
+      obj->Set(NanNew<String>("updateCount"), NanNew<Integer>(baton->updateCount));
 
       /* Note: attempt to keep backward compatability here: existing users of this library will have code that expects a single out param
          called 'returnParam'. For multiple out params, the first output will continue to be called 'returnParam' and subsequent outputs
@@ -780,19 +780,19 @@ failed:
         string returnParam(ss.str());
         switch(output->type) {
           case OutParam::OCCIINT:
-            obj->Set(String::New(returnParam.c_str()), Integer::New(output->intVal));
+            obj->Set(NanNew<String>(returnParam.c_str()), NanNew<Integer>(output->intVal));
             break;
           case OutParam::OCCISTRING:
-            obj->Set(String::New(returnParam.c_str()), String::New(output->strVal.c_str()));
+            obj->Set(NanNew<String>(returnParam.c_str()), NanNew<String>(output->strVal.c_str()));
             break;
           case OutParam::OCCIDOUBLE:
-            obj->Set(String::New(returnParam.c_str()), Number::New(output->doubleVal));
+            obj->Set(NanNew<String>(returnParam.c_str()), NanNew<Number>(output->doubleVal));
             break;
           case OutParam::OCCIFLOAT:
-            obj->Set(String::New(returnParam.c_str()), Number::New(output->floatVal));
+            obj->Set(NanNew<String>(returnParam.c_str()), NanNew<Number>(output->floatVal));
             break;
           case OutParam::OCCICURSOR:
-            obj->Set(String::New(returnParam.c_str()), CreateV8ArrayFromRows(baton, output->columns, output->rows));
+            obj->Set(NanNew<String>(returnParam.c_str()), CreateV8ArrayFromRows(baton, output->columns, output->rows));
             if (baton->error) goto failed;
             break;
           case OutParam::OCCICLOB:
@@ -812,7 +812,7 @@ failed:
       				}
       				output->clobVal.closeStream(instream);
       				output->clobVal.close();
-      				obj->Set(String::New(returnParam.c_str()), String::New(clobVal.c_str(), totalBytesRead));				
+      				obj->Set(NanNew<String>(returnParam.c_str()), NanNew<String>(clobVal.c_str(), totalBytesRead));				
       				delete [] buffer;
       				break;
             }
@@ -829,21 +829,21 @@ failed:
 
               // convert to V8 buffer
               uni::BufferType nodeBuff = node::Buffer::New(buffer, lobLength, RandomBytesFree, NULL);
-              v8::Local<v8::Object> globalObj = v8::Context::GetCurrent()->Global();
-              v8::Local<v8::Function> bufferConstructor = v8::Local<v8::Function>::Cast(globalObj->Get(v8::String::New("Buffer")));
-              v8::Handle<v8::Value> constructorArgs[3] = { uni::BufferToHandle(nodeBuff), v8::Integer::New(lobLength), v8::Integer::New(0) };
+              v8::Local<v8::Object> globalObj = NanGetCurrentContext()->Global();
+              v8::Local<v8::Function> bufferConstructor = v8::Local<v8::Function>::Cast(globalObj->Get(NanNew<String>("Buffer")));
+              v8::Handle<v8::Value> constructorArgs[3] = { uni::BufferToHandle(nodeBuff), NanNew<Integer>(lobLength), NanNew<Integer>(0) };
               v8::Local<v8::Object> v8Buffer = bufferConstructor->NewInstance(3, constructorArgs);
-              obj->Set(String::New(returnParam.c_str()), v8Buffer);
+              obj->Set(NanNew<String>(returnParam.c_str()), v8Buffer);
               break;
             }
           case OutParam::OCCIDATE:
-            obj->Set(String::New(returnParam.c_str()), OracleDateToV8Date(&output->dateVal));
+            obj->Set(NanNew<String>(returnParam.c_str()), OracleDateToV8Date(&output->dateVal));
             break;
           case OutParam::OCCITIMESTAMP:
-            obj->Set(String::New(returnParam.c_str()), OracleTimestampToV8Date(&output->timestampVal));
+            obj->Set(NanNew<String>(returnParam.c_str()), OracleTimestampToV8Date(&output->timestampVal));
             break;
           case OutParam::OCCINUMBER:
-            obj->Set(String::New(returnParam.c_str()), Number::New(output->numberVal));
+            obj->Set(NanNew<String>(returnParam.c_str()), NanNew<Number>(output->numberVal));
             break;
           default:
             {
@@ -875,7 +875,7 @@ uni::CallbackType Connection::ExecuteSync(const uni::FunctionCallbackInfo& args)
 
   ExecuteBaton* baton = new ExecuteBaton(connection, *sqlVal, &values, NULL);
   if (baton->error) {
-    Local<String> message = String::New(baton->error->c_str());
+    Local<String> message = NanNew<String>(baton->error->c_str());
     delete baton;
     UNI_THROW(Exception::Error(message));
   }

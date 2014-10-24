@@ -15,11 +15,11 @@ Persistent<FunctionTemplate> OutParam::constructorTemplate;
 void OutParam::Init(Handle<Object> target) {
   UNI_SCOPE(scope);
 
-  Local<FunctionTemplate> t = FunctionTemplate::New(New);
+  Local<FunctionTemplate> t = NanNew<FunctionTemplate>(New);
   uni::Reset(constructorTemplate, t);
   uni::Deref(constructorTemplate)->InstanceTemplate()->SetInternalFieldCount(1);
-  uni::Deref(constructorTemplate)->SetClassName(String::NewSymbol("OutParam"));
-  target->Set(String::NewSymbol("OutParam"), uni::Deref(constructorTemplate)->GetFunction());
+  uni::Deref(constructorTemplate)->SetClassName(NanNew<String>("OutParam"));
+  target->Set(NanNew<String>("OutParam"), uni::Deref(constructorTemplate)->GetFunction());
 }
 
 uni::CallbackType OutParam::New(const uni::FunctionCallbackInfo& args) {
@@ -37,7 +37,7 @@ uni::CallbackType OutParam::New(const uni::FunctionCallbackInfo& args) {
     OBJ_GET_NUMBER(opts, "size", outParam->_size, 200);
 
     // check if there's an 'in' param
-    if (opts->Has(String::New("in"))) {
+    if (opts->Has(NanNew<String>("in"))) {
       outParam->_inOut.hasInParam = true;
       switch(outParam->_type) {
       case OutParam::OCCIINT: {
@@ -61,7 +61,7 @@ uni::CallbackType OutParam::New(const uni::FunctionCallbackInfo& args) {
         break;
       }
       default:
-        UNI_THROW(Exception::Error(String::New("Unhandled OutPram type!")));
+        UNI_THROW(Exception::Error(NanNew<String>("Unhandled OutPram type!")));
       }
     }
   }

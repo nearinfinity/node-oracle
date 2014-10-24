@@ -11,7 +11,7 @@ public:
     uni::Reset(this->callback, *callback);
   }
   ~CommitBaton() {
-    callback.Dispose();
+    NanDisposePersistent(callback);
   }
 
   Connection *connection;
