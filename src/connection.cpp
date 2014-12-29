@@ -304,13 +304,15 @@ int Connection::SetValuesOnStatement(oracle::occi::Statement* stmt, ExecuteBaton
 }
 
 void Connection::CreateColumnsFromResultSet(oracle::occi::ResultSet* rs, ExecuteBaton* baton, vector<column_t*> &columns) {
-  vector<oracle::occi::MetaData> metadata = rs->getColumnListMetaData();
-  for (vector<oracle::occi::MetaData>::iterator iterator = metadata.begin(), end = metadata.end(); iterator != end; ++iterator) {
+  vector<oracle::occi::MetaData> metadata = rs->getColumnListMetaData();  
+  int colIndex = 1;
+  for (vector<oracle::occi::MetaData>::iterator iterator = metadata.begin(), end = metadata.end(); iterator != end; ++iterator, colIndex++) {
     oracle::occi::MetaData metadata = *iterator;
     column_t* col = new column_t();
     col->name = metadata.getString(oracle::occi::MetaData::ATTR_NAME);
     int type = metadata.getInt(oracle::occi::MetaData::ATTR_DATA_TYPE);
     col->charForm = metadata.getInt(oracle::occi::MetaData::ATTR_CHARSET_FORM);
+    col->bufferSize = 0;
     switch(type) {
       case oracle::occi::OCCI_TYPECODE_NUMBER:
       case oracle::occi::OCCI_TYPECODE_FLOAT:
@@ -325,6 +327,9 @@ void Connection::CreateColumnsFromResultSet(oracle::occi::ResultSet* rs, Execute
       case oracle::occi::OCCI_TYPECODE_VARCHAR:
       case oracle::occi::OCCI_TYPECODE_CHAR:
         col->type = VALUE_TYPE_STRING;
+        col->bufferSize = metadata.getInt(oracle::occi::MetaData::ATTR_CHAR_SIZE) * 4; // allocate enough for UTF-8
+        col->buffer = new char[col->bufferSize];
+        rs->setDataBuffer(colIndex, col->buffer, oracle::occi::OCCI_SQLT_STR, col->bufferSize, &col->bufferLen, &col->bufferInd);
         break;
       case oracle::occi::OCCI_TYPECODE_CLOB:
         col->type = VALUE_TYPE_CLOB;
@@ -366,12 +371,20 @@ row_t* Connection::CreateRowFromCurrentResultSetRow(oracle::occi::ResultSet* rs,
   int colIndex = 1;
   for (vector<column_t*>::iterator iterator = columns.begin(), end = columns.end(); iterator != end; ++iterator, colIndex++) {
     column_t* col = *iterator;
-    if(rs->isNull(colIndex)) {
+    if(!col->bufferSize && rs->isNull(colIndex)) {
       row->values.push_back(NULL);
     } else {
       switch(col->type) {
         case VALUE_TYPE_STRING:
-          row->values.push_back(new string(rs->getString(colIndex)));
+          if (col->bufferSize) {
+            if (col->bufferInd == -1) {
+              row->values.push_back(NULL);
+            } else {   
+              row->values.push_back(new string((char*)col->buffer, col->bufferLen));
+            }
+          } else {
+            row->values.push_back(new string(rs->getString(colIndex)));
+          }
           break;
         case VALUE_TYPE_NUMBER:
           row->values.push_back(new oracle::occi::Number(rs->getNumber(colIndex)));

@@ -24,6 +24,9 @@ ExecuteBaton::~ExecuteBaton() {
 
   for (std::vector<column_t*>::iterator iterator = columns.begin(), end = columns.end(); iterator != end; ++iterator) {
     column_t* col = *iterator;
+    if (col->bufferSize > 0) {
+        delete col->buffer;
+    }
     delete col;
   }
 
