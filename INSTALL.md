@@ -97,7 +97,7 @@ OCI_VERSION=<the instant client major version number> # Optional. Default is 11.
 Path=...;c:\instantclient_12_1\vc11;c:\instantclient_12_1
 ```
 
-**Please make sure c:\instantclient_12_1\vc11 comes before c:\instantclient_12_1**
+**Please make sure C:\Python27;c:\instantclient_12_1\vc11 comes before c:\instantclient_12_1**
 
 If you have VisualStudio 2010 installed,
 
