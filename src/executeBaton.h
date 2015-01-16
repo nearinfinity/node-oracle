@@ -24,7 +24,8 @@ enum {
   VALUE_TYPE_TIMESTAMP = 6,
   VALUE_TYPE_CLOB = 7,
   VALUE_TYPE_BLOB = 8,
-  VALUE_TYPE_ARRAY = 9
+  VALUE_TYPE_ARRAY = 9,
+  VALUE_TYPE_INUMBER = 10
 };
 
 struct column_t {

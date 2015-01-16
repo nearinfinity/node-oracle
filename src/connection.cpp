@@ -29,6 +29,7 @@ void Connection::Init(Handle<Object> target) {
   NODE_SET_PROTOTYPE_METHOD(uni::Deref(constructorTemplate), "isConnected", IsConnected);
   NODE_SET_PROTOTYPE_METHOD(uni::Deref(constructorTemplate), "setAutoCommit", SetAutoCommit);
   NODE_SET_PROTOTYPE_METHOD(uni::Deref(constructorTemplate), "setPrefetchRowCount", SetPrefetchRowCount);
+  NODE_SET_PROTOTYPE_METHOD(uni::Deref(constructorTemplate), "setNumberStringFormat", setNumberStringFormat);
   NODE_SET_PROTOTYPE_METHOD(uni::Deref(constructorTemplate), "commit", Commit);
   NODE_SET_PROTOTYPE_METHOD(uni::Deref(constructorTemplate), "rollback", Rollback);
 
@@ -43,7 +44,7 @@ uni::CallbackType Connection::New(const uni::FunctionCallbackInfo& args) {
   UNI_RETURN(scope, args, args.This());
 }
 
-Connection::Connection():m_connection(NULL), m_environment(NULL), m_autoCommit(true), m_prefetchRowCount(0) {
+Connection::Connection():m_connection(NULL), m_environment(NULL), m_autoCommit(true), m_prefetchRowCount(0), m_numberStringFormat(NULL) {
 }
 
 Connection::~Connection() {
@@ -184,6 +185,18 @@ uni::CallbackType Connection::SetPrefetchRowCount(const uni::FunctionCallbackInf
   UNI_RETURN(scope, args, Undefined());
 }
 
+uni::CallbackType Connection::setNumberStringFormat(const uni::FunctionCallbackInfo& args) {
+  UNI_SCOPE(scope);
+  Connection* connection = ObjectWrap::Unwrap<Connection>(args.This());
+  REQ_STRING_ARG(0, fmt );  
+  String::Utf8Value uFmt(fmt);
+  
+  if (connection->m_numberStringFormat != NULL) delete connection->m_numberStringFormat;
+
+  connection->m_numberStringFormat = (uFmt.length( ) != 0)? new std::string( *uFmt ):NULL;
+  UNI_RETURN(scope, args, Undefined());
+}
+
 void Connection::closeConnection() {
   if(m_environment && m_connection) {
     try {
@@ -317,9 +330,11 @@ void Connection::CreateColumnsFromResultSet(oracle::occi::ResultSet* rs, Execute
       case oracle::occi::OCCI_TYPECODE_DOUBLE:
       case oracle::occi::OCCI_TYPECODE_REAL:
       case oracle::occi::OCCI_TYPECODE_DECIMAL:
+        col->type = VALUE_TYPE_NUMBER;
+        break;      
       case oracle::occi::OCCI_TYPECODE_INTEGER:
       case oracle::occi::OCCI_TYPECODE_SMALLINT:
-        col->type = VALUE_TYPE_NUMBER;
+        col->type = VALUE_TYPE_INUMBER;
         break;
       case oracle::occi::OCCI_TYPECODE_VARCHAR2:
       case oracle::occi::OCCI_TYPECODE_VARCHAR:
@@ -373,6 +388,7 @@ row_t* Connection::CreateRowFromCurrentResultSetRow(oracle::occi::ResultSet* rs,
         case VALUE_TYPE_STRING:
           row->values.push_back(new string(rs->getString(colIndex)));
           break;
+        case VALUE_TYPE_INUMBER:          
         case VALUE_TYPE_NUMBER:
           row->values.push_back(new oracle::occi::Number(rs->getNumber(colIndex)));
           break;
@@ -623,13 +639,23 @@ Local<Object> Connection::CreateV8ObjectFromRow(ExecuteBaton* baton, vector<colu
             delete v;
           }
           break;
-        case VALUE_TYPE_NUMBER:
+        case VALUE_TYPE_INUMBER:
           {
             oracle::occi::Number* v = (oracle::occi::Number*)val;
             obj->Set(String::New(col->name.c_str()), Number::New((double)(*v)));
             delete v;
           }
           break;
+        case VALUE_TYPE_NUMBER:
+          {
+            oracle::occi::Number* v = (oracle::occi::Number*)val;
+            if (baton->connection->getNumberStringFormat() == NULL)
+              obj->Set(String::New(col->name.c_str()), Number::New((double)(*v)));
+            else
+              obj->Set(String::New(col->name.c_str()), String::New(v->toText(baton->connection->getEnvironment(), baton->connection->getNumberStringFormat()->c_str()).c_str()));
+            delete v;
+          }
+          break;          
         case VALUE_TYPE_DATE:
           {
             oracle::occi::Date* v = (oracle::occi::Date*)val;

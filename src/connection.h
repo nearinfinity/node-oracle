@@ -92,6 +92,7 @@ public:
   static uni::CallbackType Rollback(const uni::FunctionCallbackInfo& args);
   static uni::CallbackType SetAutoCommit(const uni::FunctionCallbackInfo& args);
   static uni::CallbackType SetPrefetchRowCount(const uni::FunctionCallbackInfo& args);
+  static uni::CallbackType setNumberStringFormat(const uni::FunctionCallbackInfo& args);  
   static Persistent<FunctionTemplate> constructorTemplate;
   static void EIO_Execute(uv_work_t* req);
   static void EIO_AfterExecute(uv_work_t* req, int status);
@@ -106,6 +107,7 @@ public:
 
   void setConnection(oracle::occi::Environment* environment, oracle::occi::Connection* connection);
   oracle::occi::Environment* getEnvironment() { return m_environment; }
+  std::string* getNumberStringFormat( ) { return m_numberStringFormat; }  
 
 protected:
   // shared with Statement
@@ -130,6 +132,7 @@ private:
   oracle::occi::Environment* m_environment;
   bool m_autoCommit;
   int m_prefetchRowCount;
+  std::string* m_numberStringFormat;  
 };
 
 #endif
