@@ -1,4 +1,4 @@
-# This library is not maintained. Oracle has made there own [driver](https://github.com/oracle/node-oracledb).
+# This library is not maintained. Oracle has made their own [driver](https://github.com/oracle/node-oracledb).
 
 # Oracle driver for Node.js
 
