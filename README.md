@@ -214,6 +214,8 @@ function doRead(cb) {
 			// recurse to read next record
 			return doRead(cb)
 		} else {
+			// only query? be sure to close the connection
+			//connection.close();
 			// we are done
 			return cb();
 		}
@@ -246,6 +248,8 @@ function doInsert(stmt, records, cb) {
 			doInsert(stmt, records, cb);
 		});
 	} else {
+		// only query? be sure to close the connection
+		//connection.close();
 		// we are done
 		return cb();
 	}
