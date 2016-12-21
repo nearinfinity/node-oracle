@@ -325,6 +325,8 @@ void Connection::CreateColumnsFromResultSet(oracle::occi::ResultSet* rs, Execute
       case oracle::occi::OCCI_TYPECODE_VARCHAR:
       case oracle::occi::OCCI_TYPECODE_CHAR:
         col->type = VALUE_TYPE_STRING;
+        if(metadata.getInt(oracle::occi::MetaData::ATTR_DATA_SIZE) == 0)
+          rs->setMaxColumnSize(columns.size() + 1, 1);
         break;
       case oracle::occi::OCCI_TYPECODE_CLOB:
         col->type = VALUE_TYPE_CLOB;
@@ -812,7 +814,7 @@ failed:
       				}
       				output->clobVal.closeStream(instream);
       				output->clobVal.close();
-      				obj->Set(String::New(returnParam.c_str()), String::New(clobVal.c_str(), totalBytesRead));				
+      				obj->Set(String::New(returnParam.c_str()), String::New(clobVal.c_str(), totalBytesRead));
       				delete [] buffer;
       				break;
             }
