@@ -31,6 +31,10 @@ struct column_t {
   int type;
   int charForm;
   std::string name;
+  void* buffer;
+  sb4 bufferSize;
+  ub2 bufferLen;
+  sb2 bufferInd;
 };
 
 struct row_t {
