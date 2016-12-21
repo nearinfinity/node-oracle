@@ -63,6 +63,13 @@
   END;
   /
 
+  CREATE OR REPLACE PROCEDURE procDateTimeOutParam(outParam1 OUT DATE, outParam2 OUT TIMESTAMP)
+  IS
+  BEGIN
+    select sysdate, systimestamp into outParam1, outParam2 from dual;
+  END;
+  /
+              
   BEGIN
      EXECUTE IMMEDIATE 'DROP TABLE basic_lob_table';
   EXCEPTION
