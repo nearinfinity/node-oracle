@@ -38,12 +38,12 @@ __If you do not set NLS_LANG, returned Chinese may be garbled.__
 
 2. Create the following symbolic links
 
-MacOS:
+MacOSX (64-bit):
 
 ```
 cd $OCI_LIB_DIR
-ln -s libclntsh.dylib.11.1 libclntsh.dylib
-ln -s libocci.dylib.11.1 libocci.dylib
+ln -s libclntsh.dylib.11.1 libclntsh.so
+ln -s libocci.dylib.11.1 libocci.so
 ```
 
 Linux:
